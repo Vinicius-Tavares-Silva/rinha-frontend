@@ -8,13 +8,14 @@
       <input type="file" @change="handleFile">
       <span v-if="loadError">invalid File. Please load a valid JSON file</span>
       <section ref="scrollSection" class="content-section">
-        <pre>{{ parsedJsonContent }}</pre>
+        <Tree v-if="parsedJsonContent" :treeData="parsedJsonContent" />
       </section>
     </main>
   </div>
 </template>
 
 <script>
+import Tree from './Tree.vue'
 
 const DELIMITER_PAIRS = {
   '{': '}',
@@ -22,7 +23,7 @@ const DELIMITER_PAIRS = {
 }
 const JSON_OPEN_DELIMITERS = ['{', '[']
 const JSON_CLOSE_DELIMITERS = ['}', ']']
-const START_CHUNK_SIZE = 84992
+const START_CHUNK_SIZE = 2048
 const CHUNK_SIZE = 1024
 
 export default {
@@ -34,15 +35,31 @@ export default {
     fileContent: '',
     offset: 0,
   }),
+  components: {
+    Tree,
+  },
   computed: {
     jsonContent: function() {
       return this.buildPartialJson(this.fileContent)
     },
     parsedJsonContent: function() {
-      try {
-        return JSON.parse(this.jsonContent)
-      } catch (error) {
-        return this.jsonContent
+      if (this.file) {
+        try {
+          return JSON.parse(this.jsonContent)
+        } catch (error) {
+          console.log(error);
+          // console.log(this.jsonContent);
+          return null
+        }
+      }
+    }
+  },
+  watch: {
+    parsedJsonContent: function(newValue) {
+      if (newValue) {
+        // this.$emit('fileLoaded', { content: newValue, fileName: this.fileName})
+      } else {
+        this.loadError = true
       }
     }
   },
@@ -54,8 +71,7 @@ export default {
   },
   methods: {
     handleFile(e) {
-      this.loadError = false
-      this.fileName = null
+      this.resetData()
       const file = e.target.files[0]
       this.file = file
       this.fileName = file.name
@@ -80,21 +96,39 @@ export default {
       }
     },
     buildPartialJson(string) {
+      let i = 0
+      let lastDelimeterOpenedIndex = 0
+      let lastDelimeterClosedIndex = 0
+      let insideString = false
       const delimetersOpened = []
       for (const char of string) {
-        if (JSON_OPEN_DELIMITERS.includes(char)) {
+        if (char === '"') {
+          insideString = !insideString
+        }
+        if (JSON_OPEN_DELIMITERS.includes(char) && !insideString) {
+          lastDelimeterOpenedIndex = i
           delimetersOpened.push(char)
         }
-        if (JSON_CLOSE_DELIMITERS.includes(char)) {
+        if (JSON_CLOSE_DELIMITERS.includes(char) && !insideString) {
+          lastDelimeterClosedIndex = i
           delimetersOpened.pop()
         }
+        i += 1
       }
       if (delimetersOpened.length > 0) {
+        const sliceIndex = lastDelimeterClosedIndex > lastDelimeterOpenedIndex ? lastDelimeterClosedIndex : lastDelimeterOpenedIndex
         const delimetersToAdd = delimetersOpened.map(d => DELIMITER_PAIRS[d])
-        return string + delimetersToAdd.reverse().join('')
+        const formattedString = sliceIndex === (i-1) ? string : string.slice(0, sliceIndex - i + 1)
+        return formattedString + delimetersToAdd.reverse().join('')
       }
       return string
-    }
+    },
+    resetData() {
+      this.file = null
+      this.fileName = null
+      this.fileContent = ''
+      this.offset = 0
+    },
   }
 }
 </script>
