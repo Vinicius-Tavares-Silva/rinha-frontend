@@ -7,7 +7,7 @@
 </template>
 
 <script>
-import NodeTree from "./NodeTree.vue";
+import NodeTree from "./NodeTree.vue"
 
 export default {
   props: {

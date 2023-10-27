@@ -23,13 +23,13 @@ export default {
   props: ['node'],
   methods: {
     isArray: function(item) {
-      return Array.isArray(item);
+      return Array.isArray(item)
     },
     isObject: function(item) {
-      return typeof item === "object";
+      return typeof item === "object"
     },
     notInterrable: function(item) {
-      return !this.isArray(item) && !this.isObject(item);
+      return !this.isArray(item) && !this.isObject(item)
     }
   },
 };

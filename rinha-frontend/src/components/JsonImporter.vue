@@ -5,7 +5,7 @@
         <h1 class="font-bold text-6xl m-2">JSON Tree Viewer</h1>
       </header>
       <main class="flex flex-col justify-center text-center">
-        <span class="text-2xl m-2">Simple Json Viewer that runs completely on-client. No data exchange</span>
+        <span class="text-2xl m-2">Simple Json Viewer that runs completely on-client. No data exchange.</span>
         <div class="flex justify-center m-2">
           <label 
             for="fileInput" 
@@ -18,12 +18,12 @@
         <span v-if="loadError" class="text-red-600 text-lg">invalid File. Please load a valid JSON file</span>
       </main>
     </div>
-    <div v-else>
-      <header class="flex justify-center text-center">
-        <button type="reset" class="mt-4 mb-2 hover:scale-110" @click="resetData">
-          <span class="text-4xl">&#8592;</span>
+    <div v-else class="mb-2">
+      <header class="flex justify-center pb-1">
+        <button type="reset" class="hover:scale-110 align-top" @click="resetData">
+          <span class="text-4xl align-top">&#8592;</span>
         </button>
-        <h1 class="font-bold text-4xl">{{ fileName }}</h1>
+        <h1 class="font-bold text-4xl align-bottom ml-6">{{ fileName }}</h1>
       </header>
     </div>
     <section ref="scrollSection" class="ml-8" :class="fileLoaded && 'content-section'">
@@ -65,8 +65,7 @@ export default {
         try {
           return JSON.parse(this.jsonContent)
         } catch (error) {
-          console.log(error);
-          // console.log(this.jsonContent);
+          console.log(error)
           return 'error'
         }
       }
@@ -79,7 +78,6 @@ export default {
   watch: {
     parsedJsonContent(newValue) {
       if (newValue === 'error') {
-        // this.$emit('fileLoaded', { content: newValue, fileName: this.fileName})
         this.loadError = true
       }
     },
@@ -106,7 +104,7 @@ export default {
     readFileAsBinaryString(file, chunk_size, fileSize) {
       var fileContent = ''
       const newOffset = this.offset + chunk_size
-      const blob = file.slice(this.offset, newOffset);
+      const blob = file.slice(this.offset, newOffset)
       const reader = new FileReader();
       reader.onload = e => {
         if (!this.fileContent) {
@@ -120,10 +118,9 @@ export default {
           }
         }
         this.fileContent += e.target.result
-        // this.$emit('fileLoaded', { content, fileName: this.fileName})
       }
       if (this.offset <= this.fileSize) {
-        reader.readAsBinaryString(blob);
+        reader.readAsBinaryString(blob)
         this.offset += chunk_size;
       }
     },
@@ -164,8 +161,8 @@ export default {
     },
     resetData() {
       this.file = null
-      this.fileName = null,
-      this.fileSize = null,
+      this.fileName = null
+      this.fileSize = null
       this.fileContent = ''
       this.offset = 0,
       this.loadError = false
