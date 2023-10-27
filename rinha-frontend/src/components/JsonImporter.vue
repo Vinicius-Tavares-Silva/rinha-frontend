@@ -1,16 +1,34 @@
 <template>
   <div class="flex flex-col justify-center">
-    <header>
-      <h3>JSON Tree Viewer</h3>
-    </header>
-    <main class="flex flex-col justify-center">
-      <span>Simple Json Viewer</span>
-      <input type="file" @change="handleFile">
-      <span v-if="loadError">invalid File. Please load a valid JSON file</span>
-      <section ref="scrollSection" class="content-section">
-        <Tree v-if="parsedJsonContent" :treeData="parsedJsonContent" />
-      </section>
-    </main>
+    <div v-if="!fileLoaded" class="mt-80">
+      <header class="text-center">
+        <h1 class="font-bold text-6xl m-2">JSON Tree Viewer</h1>
+      </header>
+      <main class="flex flex-col justify-center text-center">
+        <span class="text-2xl m-2">Simple Json Viewer that runs completely on-client. No data exchange</span>
+        <div class="flex justify-center m-2">
+          <label 
+            for="fileInput" 
+            class="border-2 border-slate-800 bg-slate-200 p-2 rounded shadow-md hover:bg-slate-300 font-medium cursor-pointer"
+          >
+            Load JSON
+          </label>
+          <input name="fileInput" id="fileInput" accept="application/JSON" type="file" @change="handleFile">
+        </div>
+        <span v-if="loadError" class="text-red-600 text-lg">invalid File. Please load a valid JSON file</span>
+      </main>
+    </div>
+    <div v-else>
+      <header class="flex justify-center text-center">
+        <button type="reset" class="mt-4 mb-2 hover:scale-110" @click="resetData">
+          <span class="text-4xl">&#8592;</span>
+        </button>
+        <h1 class="font-bold text-4xl">{{ fileName }}</h1>
+      </header>
+    </div>
+    <section ref="scrollSection" class="ml-8" :class="fileLoaded && 'content-section'">
+      <Tree v-if="parsedJsonContent" :treeData="parsedJsonContent" />
+    </section>
   </div>
 </template>
 
@@ -23,16 +41,16 @@ const DELIMITER_PAIRS = {
 }
 const JSON_OPEN_DELIMITERS = ['{', '[']
 const JSON_CLOSE_DELIMITERS = ['}', ']']
-const START_CHUNK_SIZE = 2048
-const CHUNK_SIZE = 1024
+const CHUNK_SIZE = 2048
 
 export default {
   name: 'JsonImporter',
   data: () => ({
     file: null,
     fileName: null,
-    loadError: false,
     fileContent: '',
+    fileSize: null,
+    loadError: false,
     offset: 0,
   }),
   components: {
@@ -43,23 +61,30 @@ export default {
       return this.buildPartialJson(this.fileContent)
     },
     parsedJsonContent: function() {
-      if (this.file) {
+      if (this.file && this.jsonContent) {
         try {
           return JSON.parse(this.jsonContent)
         } catch (error) {
           console.log(error);
           // console.log(this.jsonContent);
-          return null
+          return 'error'
         }
       }
+      return null
+    },
+    fileLoaded: function() {
+      return this.file && this.parsedJsonContent
     }
   },
   watch: {
-    parsedJsonContent: function(newValue) {
-      if (newValue) {
+    parsedJsonContent(newValue) {
+      if (newValue === 'error') {
         // this.$emit('fileLoaded', { content: newValue, fileName: this.fileName})
-      } else {
         this.loadError = true
+      }
+    },
+    offset(newValue) {
+      if (newValue >= this.fileSize) {
       }
     }
   },
@@ -75,18 +100,32 @@ export default {
       const file = e.target.files[0]
       this.file = file
       this.fileName = file.name
-      this.readFileAsBinaryString(file, START_CHUNK_SIZE)
+      this.fileSize = file.size
+      this.readFileAsBinaryString(file, CHUNK_SIZE, file.size)
     },
-    readFileAsBinaryString(file, chunk_size) {
+    readFileAsBinaryString(file, chunk_size, fileSize) {
       var fileContent = ''
-        const blob = file.slice(this.offset, this.offset + chunk_size);
-        const reader = new FileReader();
-        reader.onload = e => {
-          this.fileContent += e.target.result
-          // this.$emit('fileLoaded', { content, fileName: this.fileName})
+      const newOffset = this.offset + chunk_size
+      const blob = file.slice(this.offset, newOffset);
+      const reader = new FileReader();
+      reader.onload = e => {
+        if (!this.fileContent) {
+          if (newOffset >= fileSize) {
+            try {
+              JSON.parse(e.target.result)
+            } catch (error) {
+              this.loadError = true
+              return
+            }
+          }
         }
+        this.fileContent += e.target.result
+        // this.$emit('fileLoaded', { content, fileName: this.fileName})
+      }
+      if (this.offset <= this.fileSize) {
         reader.readAsBinaryString(blob);
         this.offset += chunk_size;
+      }
     },
     handleScroll(e) {
       const scrollSection = this.$refs.scrollSection
@@ -125,18 +164,22 @@ export default {
     },
     resetData() {
       this.file = null
-      this.fileName = null
+      this.fileName = null,
+      this.fileSize = null,
       this.fileContent = ''
-      this.offset = 0
+      this.offset = 0,
+      this.loadError = false
     },
   }
 }
 </script>
 
 <style>
-
 .content-section {
   height: 80vh;
-  overflow-y: scroll;
+  overflow-y: auto;
+}
+input[type="file"] {
+    display: none;
 }
 </style>

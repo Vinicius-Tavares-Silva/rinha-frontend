@@ -15,13 +15,13 @@ export default {
   },
   components: {
     NodeTree
-  }
+  },
 };
 </script>
 
 <style>
 .tree-list ul {
-  padding-left: 16px;
+  padding-left: 24px;
   margin: 6px 0;
 }
 </style>

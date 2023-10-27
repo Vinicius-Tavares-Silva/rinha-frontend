@@ -1,6 +1,6 @@
 <template>
   <li class="node-tree">
-    <ul v-if="isArray(node)">
+    <ul v-if="isArray(node)" class="node-list">
       <li v-for="(item, index) in node" :key="index">
         <span class="node-value">{{ index }}: </span>
         <span v-if="notInterrable(item)" class="node-value">{{ item }}</span>
@@ -31,7 +31,7 @@ export default {
     notInterrable: function(item) {
       return !this.isArray(item) && !this.isObject(item);
     }
-  }
+  },
 };
 </script>
 
