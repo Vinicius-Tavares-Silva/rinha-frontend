@@ -41,7 +41,7 @@ const DELIMITER_PAIRS = {
 }
 const JSON_OPEN_DELIMITERS = ['{', '[']
 const JSON_CLOSE_DELIMITERS = ['}', ']']
-const CHUNK_SIZE = 2048
+const CHUNK_SIZE = 4096
 
 export default {
   name: 'JsonImporter',
@@ -104,7 +104,7 @@ export default {
     readFileAsBinaryString(file, chunk_size, fileSize) {
       var fileContent = ''
       const newOffset = this.offset + chunk_size
-      const blob = file.slice(this.offset, newOffset)
+      const blob = file ? file.slice(this.offset, newOffset) : null
       const reader = new FileReader();
       reader.onload = e => {
         if (!this.fileContent) {
@@ -119,7 +119,7 @@ export default {
         }
         this.fileContent += e.target.result
       }
-      if (this.offset <= this.fileSize) {
+      if (this.offset <= this.fileSize && blob) {
         reader.readAsBinaryString(blob)
         this.offset += chunk_size;
       }
@@ -160,6 +160,7 @@ export default {
       return string
     },
     resetData() {
+      this.$refs.scrollSection.scrollTo(0, 0)
       this.file = null
       this.fileName = null
       this.fileSize = null
